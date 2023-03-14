@@ -68,6 +68,6 @@ RUN apk add --no-cache --update \
     
 COPY --from=build-stage /tmp/app/dist/ /app/
 
-VOLUME [ "/data", "/config" ]
+VOLUME [ "/config" ]
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
