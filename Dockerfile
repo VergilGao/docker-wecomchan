@@ -55,7 +55,6 @@ ENV GID=100
 ENV UMASK=022
 
 RUN apk add --no-cache --update \
-      ffmpeg \
       coreutils \
       shadow \
       su-exec && \
