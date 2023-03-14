@@ -28,4 +28,4 @@ if [ ! -f "${config_file}" ]; then
 fi
 
 echo "程序启动..."
-su-exec ${USER} /app/wecomchan --config=$config_file
+su-exec ${USER} /app/wecomchan/wecomchan --config=$config_file
