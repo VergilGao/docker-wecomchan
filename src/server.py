@@ -1,8 +1,10 @@
 from http.server import BaseHTTPRequestHandler
-import requests
-import json
-import urllib.parse
-import re
+from requests import post as requests_post
+from requests import get as requests_get
+from json import loads as json_loads
+from json import dumps as json_dumps
+from urllib.parse import parse_qs,unquote
+from re import match as re_match
 
 
 class ResquestHandler(BaseHTTPRequestHandler):
@@ -42,14 +44,14 @@ class ResquestHandler(BaseHTTPRequestHandler):
         if '?' in self.path:
             split = self.path.split('?', 1)
             path = split[0]
-            parameters = urllib.parse.parse_qs(urllib.parse.unquote(split[1]))
+            parameters = parse_qs(unquote(split[1]))
         else:
             path = self.path
 
-        routeMatch = re.match(r'^/api/([0-9a-zA-Z]+)[/\n\r]*$', path)
+        routeMatch = re_match(r'^/api/([0-9a-zA-Z]+)[/\n\r]*$', path)
 
         if not routeMatch:
-            self.send_error(200, json.dumps(
+            self.send_error(200, json_dumps(
                 {'code': 1400, 'error_message': 'route error'}))
             return
 
@@ -58,7 +60,7 @@ class ResquestHandler(BaseHTTPRequestHandler):
         if route == 'text':
             result, token = self.__get_token()
             if not result:
-                self.send_response(200, json.dumps(
+                self.send_response(200, json_dumps(
                     {'code': 1302, 'error_message': 'request token error'}))
                 return
 
@@ -67,7 +69,7 @@ class ResquestHandler(BaseHTTPRequestHandler):
             send_msg_url = f'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={token}'
             length = int(self.headers['content-length'])
             content = self.rfile.read(length)
-            content = json.dumps(content.decode(
+            content = json_dumps(content.decode(
                 encoding='utf-8'), ensure_ascii=False)
             data = f'''{{ 
 "touser" : "{touser}",
@@ -80,34 +82,34 @@ class ResquestHandler(BaseHTTPRequestHandler):
 "duplicate_check_interval": 300
 }}'''.encode(encoding='utf-8')
             send_msg_url = f'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={token}'
-            response = requests.post(send_msg_url, data=data)
+            response = requests_post(send_msg_url, data=data)
 
             if not response.ok:
-                self.send_response(200, json.dumps(
+                self.send_response(200, json_dumps(
                     {'code': 1301, 'error_message': 'message send error'}))
                 return
 
-            response = json.loads(response.content)
+            response = json_loads(response.content)
             respose_code = response.get('errcode')
 
             if respose_code == 0:
-                self.send_response(200, json.dumps(
+                self.send_response(200, json_dumps(
                     {'code': 0, 'error_message': ''}))
             else:
-                self.send_response(200, json.dumps(
+                self.send_response(200, json_dumps(
                     {'code': 1300, 'error_message': f'wecom return error: {respose_code}'}))
             return
 
-        self.send_error(200, json.dumps(
+        self.send_error(200, json_dumps(
             {'code': 1400, 'error_message': 'route error'}))
         return
 
     def __get_token(self) -> tuple[bool, str]:
-        response = requests.get(
+        response = requests_get(
             f"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={self.get_cid()}&corpsecret={self.get_secret()}")
         if not response.ok:
             return False, response.content.decode()
-        response_message = json.loads(response.content)
+        response_message = json_loads(response.content)
         errcode = response_message.get('errcode')
         if errcode == 0:
             token: str = response_message.get('access_token')
