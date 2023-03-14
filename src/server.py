@@ -3,7 +3,7 @@ from requests import post as requests_post
 from requests import get as requests_get
 from json import loads as json_loads
 from json import dumps as json_dumps
-from urllib.parse import parse_qs,unquote
+from urllib.parse import parse_qs, unquote
 from re import match as re_match
 
 
@@ -38,7 +38,7 @@ class ResquestHandler(BaseHTTPRequestHandler):
         return cls.__secret
 
     def do_GET(self):
-        self.send_error(415, 'Only post is supported')
+        self.__send_response(415, 'Only post is supported')
 
     def do_POST(self):
         if '?' in self.path:
@@ -51,8 +51,8 @@ class ResquestHandler(BaseHTTPRequestHandler):
         routeMatch = re_match(r'^/api/([0-9a-zA-Z]+)[/\n\r]*$', path)
 
         if not routeMatch:
-            self.send_error(200, json_dumps(
-                {'code': 1400, 'error_message': 'route error'}))
+            self.__send_response(
+                200, {'code': 1400, 'error_message': 'route error'})
             return
 
         route: str = routeMatch.group(1)
@@ -60,8 +60,8 @@ class ResquestHandler(BaseHTTPRequestHandler):
         if route == 'text':
             result, token = self.__get_token()
             if not result:
-                self.send_response(200, json_dumps(
-                    {'code': 1302, 'error_message': 'request token error'}))
+                self.__send_response(
+                    200,  {'code': 1302, 'error_message': 'request token error'})
                 return
 
             touser: str = parameters["touser"][0] if "touser" in parameters else '@all'.replace(
@@ -85,23 +85,22 @@ class ResquestHandler(BaseHTTPRequestHandler):
             response = requests_post(send_msg_url, data=data)
 
             if not response.ok:
-                self.send_response(200, json_dumps(
-                    {'code': 1301, 'error_message': 'message send error'}))
+                self.__send_response(
+                    200, {'code': 1301, 'error_message': 'message send error'})
                 return
 
             response = json_loads(response.content)
             respose_code = response.get('errcode')
 
             if respose_code == 0:
-                self.send_response(200, json_dumps(
-                    {'code': 0, 'error_message': ''}))
+                self.__send_response(200,  {'code': 0, 'error_message': ''})
             else:
-                self.send_response(200, json_dumps(
-                    {'code': 1300, 'error_message': f'wecom return error: {respose_code}'}))
+                self.__send_response(
+                    200,  {'code': 1300, 'error_message': f'wecom return error: {respose_code}'})
             return
 
-        self.send_error(200, json_dumps(
-            {'code': 1400, 'error_message': 'route error'}))
+        self.__send_response(
+            200, {'code': 1400, 'error_message': 'route error'})
         return
 
     def __get_token(self) -> tuple[bool, str]:
@@ -117,3 +116,15 @@ class ResquestHandler(BaseHTTPRequestHandler):
                 return True, token
         else:
             return False, response_message
+
+    def __send_response(self, code: int, content: dict | str | None):
+        if isinstance(content, dict):
+            self.send_response(code)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json_dumps(content).encode(encoding='utf-8'))
+        else:
+            self.send_response(code)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(content.encode(encoding='utf-8'))
