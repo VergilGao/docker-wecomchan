@@ -1,4 +1,4 @@
-# docker-wecomchain
+# docker-wecomchan
 
 [GPL LICENSE](https://github.com/vergilgao/docker-wecomchan/blob/master/LICENSE)
 
