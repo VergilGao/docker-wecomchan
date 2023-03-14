@@ -64,7 +64,7 @@ class ResquestHandler(BaseHTTPRequestHandler):
                     200,  {'code': 1302, 'error_message': 'request token error'})
                 return
 
-            touser: str = parameters["touser"][0] if "touser" in parameters else '@all'.replace(
+            touser: str = parameters["touser"][0] if parameters and "touser" in parameters else '@all'.replace(
                 '"', '')
             send_msg_url = f'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={token}'
             length = int(self.headers['content-length'])
